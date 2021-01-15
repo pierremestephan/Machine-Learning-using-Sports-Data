@@ -1,3 +1,7 @@
+import numpy as np
+import pandas as pd
+from sportsreference.nfl.boxscore import Boxscores, Boxscore
+
 def get_schedule(year):
     weeks = list(range(1,18))
     schedule_df = pd.DataFrame()
