@@ -191,3 +191,44 @@ def agg_weekly_data(schedule_df,weeks_games_df,current_week,weeks):
     agg_games_df = agg_games_df.reset_index().drop(columns = 'index')
     agg_games_df = agg_games_df.drop(index = 20, axis=0)
     return agg_games_df
+def get_elo():
+    elo_df = pd.read_csv('nfl_elo_latest.csv')
+    elo_df = elo_df.drop(columns = ['season','neutral' ,'playoff', 'elo_prob1', 'elo_prob2', 'elo1_post', 'elo2_post',
+           'qbelo1_pre', 'qbelo2_pre', 'qb1', 'qb2', 'qb1_adj', 'qb2_adj', 'qbelo_prob1', 'qbelo_prob2',
+           'qb1_game_value', 'qb2_game_value', 'qb1_value_post', 'qb2_value_post',
+           'qbelo1_post', 'qbelo2_post', 'score1', 'score2'])
+    elo_df.date = pd.to_datetime(elo_df.date)
+    elo_df = elo_df[elo_df.date < '01-05-2021']
+
+    elo_df['team1'] = elo_df['team1'].replace(['KC', 'JAX', 'CAR', 'BAL', 'BUF', 'MIN', 'DET', 'ATL', 'NE', 'WSH',
+           'CIN', 'NO', 'SF', 'LAR', 'NYG', 'DEN', 'CLE', 'IND', 'TEN', 'NYJ',
+           'TB', 'MIA', 'PIT', 'PHI', 'GB', 'CHI', 'DAL', 'ARI', 'LAC', 'HOU',
+           'SEA', 'OAK'],
+            ['kan','jax','car', 'rav', 'buf', 'min', 'det', 'atl', 'nwe', 'was', 
+            'cin', 'nor', 'sfo', 'ram', 'nyg', 'den', 'cle', 'clt', 'oti', 'nyj', 
+             'tam','mia', 'pit', 'phi', 'gnb', 'chi', 'dal', 'crd', 'sdg', 'htx', 'sea', 'rai' ])
+    elo_df['team2'] = elo_df['team2'].replace(['KC', 'JAX', 'CAR', 'BAL', 'BUF', 'MIN', 'DET', 'ATL', 'NE', 'WSH',
+           'CIN', 'NO', 'SF', 'LAR', 'NYG', 'DEN', 'CLE', 'IND', 'TEN', 'NYJ',
+           'TB', 'MIA', 'PIT', 'PHI', 'GB', 'CHI', 'DAL', 'ARI', 'LAC', 'HOU',
+           'SEA', 'OAK'],
+            ['kan','jax','car', 'rav', 'buf', 'min', 'det', 'atl', 'nwe', 'was', 
+            'cin', 'nor', 'sfo', 'ram', 'nyg', 'den', 'cle', 'clt', 'oti', 'nyj', 
+             'tam','mia', 'pit', 'phi', 'gnb', 'chi', 'dal', 'crd', 'sdg', 'htx', 'sea', 'rai' ])
+    return elo_df
+def merge_rankings(agg_games_df,elo_df):
+    agg_games_df = pd.merge(agg_games_df, elo_df, how = 'inner', left_on = ['home_abbr', 'away_abbr'], right_on = ['team1', 'team2']).drop(columns = ['date','team1', 'team2'])
+    agg_games_df['elo_dif'] = agg_games_df['elo2_pre'] - agg_games_df['elo1_pre']
+    agg_games_df['qb_dif'] = agg_games_df['qb2_value_pre'] - agg_games_df['qb1_value_pre']
+    agg_games_df = agg_games_df.drop(columns = ['elo1_pre', 'elo2_pre', 'qb1_value_pre', 'qb2_value_pre'])
+    return agg_games_df
+def prep_test_train(current_week,weeks,year):
+    current_week = current_week + 1
+    schedule_df  = get_schedule(year)
+    weeks_games_df = game_data_up_to_week(weeks,year)
+    agg_games_df = agg_weekly_data(schedule_df,weeks_games_df,current_week,weeks)
+    elo_df = get_elo()
+    agg_games_df = merge_rankings(agg_games_df, elo_df)
+    train_df = agg_games_df[agg_games_df.result.notna()]
+    current_week = current_week - 1
+    test_df = agg_games_df[agg_games_df.week == current_week]
+    return test_df, train_df
