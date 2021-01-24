@@ -1,0 +1,131 @@
+---
+title: "Winning Your Fantasy Football League with Machine Learning"
+author: "Pierre Estephan"
+date: "3/20/2020"
+output: pdf_document
+---
+
+```{r analysis}
+#Non PPR
+library(randomForest)
+library(dplyr)
+require(caTools)
+library(caret)
+library(plm)
+
+football_data = read.csv("FantasyFootballData.csv")
+football_data[is.na(football_data)] = 0
+
+individuals = unique(football_data$Name)
+
+#Checking Assumptions
+lm = lm(Points ~ Position+Age+G+GS+Passing.Cmp+Passing.Att+Rushing.Att+Rushing.Y.A+Receiving.Tgt+Receiving.Rec+Receiving.Y.R,
+  data=football_data)
+
+par(mfrow=c(2,2))
+plot(lm)
+
+#ObtaininLength
+length(which(football_data$Position == "QB"))
+length(which(football_data$Position == "RB"))
+length(which(football_data$Position == "WR"))
+length(which(football_data$Position == "TE"))
+
+sample = sample.split(football_data$Points, SplitRatio = .75)
+train = subset(football_data, sample == TRUE)
+test  = subset(football_data, sample == FALSE)
+
+rf = randomForest(
+  Points ~ Position+Age+G+GS+Passing.Cmp+Passing.Att+Rushing.Att+Rushing.Y.A+Receiving.Tgt+Receiving.Rec+Receiving.Y.R,
+  data=train
+)
+
+
+predTrain = predict(rf, train, type = "class")
+predTest = predict(rf, test, type = "class")
+
+forecasted_train = cbind(train,predTrain)
+forecasted_test = cbind(test,predTest) 
+
+#RMSE
+(sqrt(mean((test$Points-predTest)^2)))/mean(test$Points)
+
+#R^2
+1-sum((test$Points-predTest)^2)/sum((test$Points-mean(test$Points))^2)
+
+plot(rf)
+
+varImpPlot(rf, type=2,
+           main = "Variable Importance")
+```
+
+```{r Visuals}
+QB_Split = football_data[which(football_data$Position=="QB"),]
+RB_Split = football_data[which(football_data$Position=="RB"),]
+WR_Split = football_data[which(football_data$Position=="WR"),]
+TE_Split = football_data[which(football_data$Position=="TE"),]
+
+par(oma=c(0,0,2,0))
+par(mfrow=c(2,2))
+plot(QB_Split$Passing.Att, QB_Split$Points,
+     main = "Passing Attempts",
+     xlab = "Attemps",
+     ylab = "Fantasy Points",
+     ylim = c(0,400))
+plot(RB_Split$Rushing.Att, RB_Split$Points,
+     main = "Rushing Attempts",
+     xlab = "Attemps",
+     ylab = "Fantasy Points",
+     ylim = c(0,400))
+plot(WR_Split$Receiving.Tgt, WR_Split$Points,
+     main = "WR Targets",
+     xlab = "Targets",
+     ylab = "Fantasy Points",
+     ylim = c(0,400))
+plot(TE_Split$Receiving.Tgt, TE_Split$Points,
+     main = "TE Targets",
+     xlab = "Targets",
+     ylab = "Fantasy Points",
+     ylim = c(0,400))
+title(main="Attempts to Fantasy Points", outer=TRUE)
+```
+
+```{r Visuals2}
+par(oma=c(0,0,2,0))
+par(mfrow=c(2,2))
+plot(QB_Split$Passing.TD, QB_Split$Points,
+     main = "QBs",
+     xlab = "Passing Touchdowns",
+     ylab = "Fantasy Points",
+     ylim = c(0,400))
+plot(RB_Split$Rushing.TD, RB_Split$Points,
+     main = "RBs",
+     xlab = "Rushing Touchdowns",
+     ylab = "Fantasy Points",
+     ylim = c(0,400))
+plot(WR_Split$Receiving.TD, WR_Split$Points,
+     main = "WRs",
+     xlab = "Receiving Touchdowns",
+     ylab = "Fantasy Points",
+     ylim = c(0,400))
+plot(TE_Split$Receiving.TD, TE_Split$Points,
+     main = "TEs",
+     xlab = "Receiving Touchdowns",
+     ylab = "Fantasy Points",
+     ylim = c(0,400))
+title("Touchdowns to Fantasy Points",outer=TRUE,
+      ylab = 5)
+```
+
+```{r 2019szn}
+recent_season = read.csv("2019Season.csv")
+recent_season[is.na(recent_season)] = 0
+projectedpoints = predict(rf,recent_season)
+recent_season = cbind(recent_season,projectedpoints)
+
+#RMSE
+(sqrt(mean((recent_season$FantPt-projectedpoints)^2)))/mean(recent_season$FantPt)
+
+#R^2
+1-sum((recent_season$FantPt-projectedpoints)^2)/sum((recent_season$FantPt-mean(recent_season$FantPt))^2)
+```
