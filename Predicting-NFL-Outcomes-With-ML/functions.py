@@ -2,6 +2,12 @@ import numpy as np
 import pandas as pd
 from sportsreference.nfl.boxscore import Boxscores, Boxscore
 
+def display(y_pred,X_test):
+    for g in range(len(y_pred)):
+        win_prob = round(y_pred[g],2)
+        away_team = X_test.reset_index().drop(columns = 'index').loc[g,'away_name']
+        home_team = X_test.reset_index().drop(columns = 'index').loc[g,'home_name']
+        print(f'The {away_team} have a probability of {win_prob} of beating the {home_team}.') 
 def get_schedule(year):
     weeks = list(range(1,18))
     schedule_df = pd.DataFrame()
