@@ -9,7 +9,7 @@ def display(y_pred,X_test):
         home_team = X_test.reset_index().drop(columns = 'index').loc[g,'home_name']
         print(f'The {away_team} have a probability of {win_prob} of beating the {home_team}.') 
 def get_schedule(year):
-    weeks = list(range(1,18))
+    weeks = list(range(1,18)) #Creates a range of numbers week 1 through 18 for the season
     schedule_df = pd.DataFrame()
     for w in range(len(weeks)):
         date_string = str(weeks[w]) + '-' + str(year)
