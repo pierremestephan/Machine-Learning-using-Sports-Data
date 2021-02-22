@@ -8,13 +8,15 @@ def metrics(df, y_pred):
     df.loc[:, 'DrawPerc'] = y_pred[1]
     df.loc[:, 'AwayPerc'] = y_pred[2]
 
+    df = df.dropna()
+
     conditions = [
         (df['HomeWinPerc'] >= df['DrawPerc']) & (df['HomeWinPerc'] >= df['AwayPerc']), #Home Condition
         (df['HomeWinPerc'] <= df['DrawPerc']) & (df['DrawPerc'] >= df['AwayPerc']), #Draw Condition
-        (df['HomeWinPerc'] <= df['DrawPerc']) & (df['DrawPerc'] <= df['AwayPerc']) #Away Condition
+        (df['HomeWinPerc'] <= df['AwayPerc']) & (df['DrawPerc'] <= df['AwayPerc']) #Away Condition
     ]
 
-    values = [0, 1, 2]
+    values = [0,1,2]
 
     df["PredResult"] = np.select(conditions, values)
     df['Comparison'] = np.where(df["FTR"] == df["PredResult"], True, False)
