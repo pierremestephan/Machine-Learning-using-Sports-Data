@@ -3,13 +3,15 @@ import pandas as pd
 import requests
 import json
 
-def metrics(df, y_pred):
+def split_preds(df, y_pred):
     df.loc[:, 'HomeWinPerc'] = y_pred[0]
     df.loc[:, 'DrawPerc'] = y_pred[1]
     df.loc[:, 'AwayPerc'] = y_pred[2]
 
     df = df.dropna()
+    return df
 
+def metrics(df):
     conditions = [
         (df['HomeWinPerc'] >= df['DrawPerc']) & (df['HomeWinPerc'] >= df['AwayPerc']), #Home Condition
         (df['HomeWinPerc'] <= df['DrawPerc']) & (df['DrawPerc'] >= df['AwayPerc']), #Draw Condition
