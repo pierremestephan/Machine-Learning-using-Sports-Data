@@ -25,4 +25,13 @@ def metrics(df, y_pred):
     print((df['FTR'].value_counts()/df['FTR'].count())*100)
     print((df['PredResult'].value_counts()/df['PredResult'].count())*100)
 
-    
+def measure_csv_df(csv_df, clf):
+    csv_df = csv_df[["Date", "Time", "HomeTeam", "AwayTeam", "FTHG", "FTAG", "FTR", "HTHG", "HTAG", "HS", "AS", "HST", "AST", "HC", "AC", "HF", "AF", "HR", "AR"]]
+    csv_df_subset = csv_df.drop(columns = ['Date', 'Time', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR', "HTHG", "HTAG"])
+    csv_df_pred = clf.predict_proba(csv_df_subset)
+    csv_df_pred = pd.DataFrame(csv_df_pred)
+
+    csv_df.loc[:, 'HomeWinPerc'] = csv_df_pred[0]
+    csv_df.loc[:, 'DrawPerc'] = csv_df_pred[1]
+    csv_df.loc[:, 'AwayPerc'] = csv_df_pred[2]
+    return csv_df
